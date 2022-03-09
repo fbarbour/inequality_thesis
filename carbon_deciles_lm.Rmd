@@ -1,0 +1,22 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+lm(log_CF ~ log_expend + gini_disp + Country.Code -1, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + gini_wealth + Country.Code -1, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + log_extractivism + Country.Code -1, data = carbon_deciles_st) %>% summary()
+
+lm(log_CF ~ log_expend + gini_disp + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + gini_wealth + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + log_extractivism + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap, data = carbon_deciles_st) %>% summary()
+
+lm(log_CF ~ log_expend + gini_disp + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap + Country.Code -1, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + gini_wealth + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap + Country.Code -1, data = carbon_deciles_st) %>% summary()
+lm(log_CF ~ log_expend + log_extractivism + log_popDensity + urbanisation + tech_index + ECI + active_pop + log_biocap + Country.Code -1, data = carbon_deciles_st) %>% summary()
+```

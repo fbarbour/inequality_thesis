@@ -1,0 +1,60 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+lm(life_sat ~ log_CO2 + gini_disp + log_CO2:gini_disp, data = jefim_data) %>% summary()
+lm(life_sat ~ log_MF + gini_disp + log_MF:gini_disp, data = jefim_data) %>% summary()
+lm(life_sat ~ log_landSys + gini_disp + log_landSys:gini_disp, data = jefim_data) %>% summary()
+lm(life_sat ~ log_energy + gini_disp + log_energy:gini_disp, data = jefim_data) %>% summary()
+lm(life_sat ~ log_ecofp + gini_disp + log_ecofp:gini_disp, data = jefim_data) %>% summary()
+
+lm(san_sat ~ log_CO2 + gini_disp + log_CO2:gini_disp, data = jefim_data) %>% summary()
+lm(san_sat ~ log_MF + gini_disp + log_MF:gini_disp, data = jefim_data) %>% summary()
+lm(san_sat ~ log_landSys + gini_disp + log_landSys:gini_disp, data = jefim_data) %>% summary()
+lm(san_sat ~ log_energy + gini_disp + log_energy:gini_disp, data = jefim_data) %>% summary()
+lm(san_sat ~ log_ecofp + gini_disp + log_ecofp:gini_disp, data = jefim_data) %>% summary()
+
+lm(nutr_sat ~ log_CO2 + gini_disp + log_CO2:gini_disp, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_MF + gini_disp + log_MF:gini_disp, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_landSys + gini_disp + log_landSys:gini_disp, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_energy + gini_disp + log_energy:gini_disp, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_ecofp + gini_disp + log_ecofp:gini_disp, data = jefim_data) %>% summary()
+
+lm(energy_sat ~ log_CO2 + gini_disp + log_CO2:gini_disp, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_MF + gini_disp + log_MF:gini_disp, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_landSys + gini_disp + log_landSys:gini_disp, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_energy + gini_disp + log_energy:gini_disp, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_ecofp + gini_disp + log_ecofp:gini_disp, data = jefim_data) %>% summary()
+```
+
+```{r}
+lm(life_sat ~ log_CO2 + gini_wealth + log_CO2:gini_wealth, data = jefim_data) %>% summary()
+lm(life_sat ~ log_MF + gini_wealth + log_MF:gini_wealth, data = jefim_data) %>% summary()
+lm(life_sat ~ log_landSys + gini_wealth + log_landSys:gini_wealth, data = jefim_data) %>% summary()
+lm(life_sat ~ log_energy + gini_wealth + log_energy:gini_wealth, data = jefim_data) %>% summary()
+lm(life_sat ~ log_ecofp + gini_wealth + log_ecofp:gini_wealth, data = jefim_data) %>% summary()
+
+lm(san_sat ~ log_CO2 + gini_wealth + log_CO2:gini_wealth, data = jefim_data) %>% summary()
+lm(san_sat ~ log_MF + gini_wealth + log_MF:gini_wealth, data = jefim_data) %>% summary()
+lm(san_sat ~ log_landSys + gini_wealth + log_landSys:gini_wealth, data = jefim_data) %>% summary()
+lm(san_sat ~ log_energy + gini_wealth + log_energy:gini_wealth, data = jefim_data) %>% summary()
+lm(san_sat ~ log_ecofp + gini_wealth + log_ecofp:gini_wealth, data = jefim_data) %>% summary()
+
+lm(nutr_sat ~ log_CO2 + gini_wealth + log_CO2:gini_wealth, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_MF + gini_wealth + log_MF:gini_wealth, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_landSys + gini_wealth + log_landSys:gini_wealth, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_energy + gini_wealth + log_energy:gini_wealth, data = jefim_data) %>% summary()
+lm(nutr_sat ~ log_ecofp + gini_wealth + log_ecofp:gini_wealth, data = jefim_data) %>% summary()
+
+lm(energy_sat ~ log_CO2 + gini_wealth + log_CO2:gini_wealth, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_MF + gini_wealth + log_MF:gini_wealth, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_landSys + gini_wealth + log_landSys:gini_wealth, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_energy + gini_wealth + log_energy:gini_wealth, data = jefim_data) %>% summary()
+lm(energy_sat ~ log_ecofp + gini_wealth + log_ecofp:gini_wealth, data = jefim_data) %>% summary()
+```

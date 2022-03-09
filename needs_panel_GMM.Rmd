@@ -1,0 +1,38 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+pgmm(log_life ~ lag(log_life, 1) + log_gini + log_carbon + log_urb + log_popDensity + log_active | lag(log_life, 1:99), data = panel_data_plm, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(log_life ~ lag(log_life, 1) + log_gini + log_MF + log_urb + log_popDensity + log_active | lag(log_life, 1:99), data = panel_data_plm, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(log_life ~ lag(log_life, 1) + log_gini + log_ecofp + log_urb + log_popDensity + log_active | lag(log_life, 1:99), data = panel_data_plm, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(log_life ~ lag(log_life, 1) + log_gini + log_energy + log_urb + log_popDensity + log_active | lag(log_life, 1:99), data = panel_data_plm, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+
+pgmm(food_sat ~ lag(food_sat, 1:2) + log_gini + log_carbon + log_urb + log_popDensity + log_active | lag(food_sat, 2:99), data = panel_data_plm, effect = "twoways", model = "twosteps", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1:2) + log_gini + log_MF + log_urb + log_popDensity + log_active | lag(food_sat, 2:99), data = panel_data_plm, effect = "twoways", model = "twosteps", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1:2) + log_gini + log_ecofp + log_urb + log_popDensity + log_active | lag(food_sat, 2:99), data = panel_data_plm, effect = "twoways", model = "twosteps", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1:2) + log_gini + log_energy + log_urb + log_popDensity + log_active | lag(food_sat, 2:99), data = panel_data_plm, effect = "twoways", model = "twosteps", transformation = "ld") %>% summary()
+```
+
+```{r}
+pgmm(lifeExp ~ lag(lifeExp, 1) + gini_wealth + log_carbon + urbanisation + log_popDensity + active_pop | lag(lifeExp, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(lifeExp ~ lag(lifeExp, 1) + gini_wealth + log_MF + urbanisation + log_popDensity + active_pop | lag(lifeExp, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(lifeExp ~ lag(lifeExp, 1) + gini_wealth + log_ecofp + urbanisation + log_popDensity + active_pop | lag(lifeExp, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(lifeExp ~ lag(lifeExp, 1) + gini_wealth + log_energy + urbanisation + log_popDensity + active_pop | lag(lifeExp, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+
+pgmm(san_sat ~ lag(san_sat, 1) + gini_wealth + log_carbon + urbanisation + log_popDensity + active_pop | lag(san_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(san_sat ~ lag(san_sat, 1) + gini_wealth + log_MF + urbanisation + log_popDensity + active_pop | lag(san_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(san_sat ~ lag(san_sat, 1) + gini_wealth + log_ecofp + urbanisation + log_popDensity + active_pop | lag(san_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(san_sat ~ lag(san_sat, 1) + gini_wealth + log_energy + urbanisation + log_popDensity + active_pop | lag(san_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+
+pgmm(food_sat ~ lag(food_sat, 1) + gini_wealth + log_carbon + urbanisation + log_popDensity + active_pop | lag(food_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1) + gini_wealth + log_MF + urbanisation + log_popDensity + active_pop | lag(food_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1) + gini_wealth + log_ecofp + urbanisation + log_popDensity + active_pop | lag(food_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+pgmm(food_sat ~ lag(food_sat, 1) + gini_wealth + log_energy + urbanisation + log_popDensity + active_pop | lag(food_sat, 1:99), data = panel_data_plm_st, effect = "twoways", model = "onestep", transformation = "ld") %>% summary()
+```
+

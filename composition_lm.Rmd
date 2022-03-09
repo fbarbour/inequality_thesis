@@ -1,0 +1,46 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+lm(log(food) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(alc_tab) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(wearables) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(housing_other) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(heat_elec) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(household_appl) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(house_total) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(health) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(vehicle_purchase) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(vehicle_fuel) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(transp_other) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(transport_total) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(comms) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(recr) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+lm(log(package_hols) ~ log(total) + gini_disp + log(total):gini_disp, data = subset(consumption_comp, package_hols > 0)) %>% summary()
+lm(log(education_finance) ~ log(total) + gini_disp + log(total):gini_disp, data = consumption_comp) %>% summary()
+```
+
+```{r}
+lm(log(food) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(alc_tab) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(wearables) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(housing_other) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(heat_elec) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(household_appl) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(house_total) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(health) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(vehicle_purchase) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(vehicle_fuel) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(transp_other) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(transport_total) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(comms) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(recr) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+lm(log(package_hols) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = subset(consumption_comp, package_hols > 0)) %>% summary()
+lm(log(education_finance) ~ log(total) + gini_disp + log(total):gini_disp + Country.Code -1, data = consumption_comp) %>% summary()
+```
