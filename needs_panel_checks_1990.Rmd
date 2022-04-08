@@ -1,0 +1,170 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r setup, echo = FALSE, message = FALSE, warning=FALSE}
+library(tidyverse)
+library(GGally)
+library(plm)
+library(skimr)
+library(stargazer)
+library(corrgram)
+```
+
+```{r warning = FALSE, message = FALSE}
+corrgram(
+    panel_data %>% select(starts_with("log"), ends_with("sat"), urbanisation, gini_disp, gini_wealth),
+    order = "PCA", 
+    lower.panel = panel.cor,
+    upper.panel = panel.fill,
+    diag.panel = panel.density,
+    outer.labels = list(
+        bottom = list(cex = 1, srt = 90),
+        left = list(cex=1,srt=0,adj=c(1,0))
+    ))
+
+```
+
+
+Unit root I(0)
+```{r}
+purtest(panel_data_plm_st$log_carbon, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$log_MF, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$gini_disp, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$gini_wealth, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$life_sat, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$san_sat, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$energy_sat, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$urbanisation, test = "madwu", lags = 1)
+purtest(panel_data_plm_st$log_popDensity, test = "madwu", lags = 1)
+```
+
+Unit root I(1)
+```{r}
+purtest(panel_data_plm_st$log_carbon, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$log_MF, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$gini_disp, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$gini_wealth, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$life_sat, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$san_sat, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$energy_sat, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$urbanisation, test = "madwu", lags = 1, exo = "trend")
+purtest(panel_data_plm_st$log_popDensity, test = "madwu", lags = 1, exo = "trend")
+```
+
+```{r}
+fp1 <- c("life_sat", "san_sat", "energy_sat")
+fp2 <- c(rep(" + log_carbon", 3), rep(" + log_MF", 3), rep(" + log_carbon", 3), rep(" + log_MF", 3))
+frm <- c(" ~ gini_disp + gini_wealth")
+cntrl <- c(rep("", 6), rep(" + urbanisation + log_popDensity", 6))
+frms <- paste0(fp1, frm, fp2, cntrl)
+
+#fp <- c("life_sat", "san_sat", "energy_sat")
+#frm <- c(" ~ gini_disp + gini_wealth + log_MF + log_carbon + log_MF:log_carbon")
+#cntrl <- c(rep("", 3), rep(" + urbanisation + log_popDensity", 3))
+#frms <- paste0(fp, frm, cntrl)
+
+fix_effects <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        data = panel_data_plm_st, 
+        effect = "twoways", model = "within"
+)})
+
+
+random_effects <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        data = panel_data_plm_st, 
+        effect = "twoways", model = "random"
+)})
+
+
+differenced <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        data = panel_data_plm_st, 
+        model = "fd"
+)})
+
+pooling <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        data = panel_data_plm_st, 
+        effect = "twoways", model = "pooling"
+)})
+```
+
+
+#### Fix or random effects?
+
+```{r}
+map2(fix_effects, random_effects, phtest)
+```
+
+
+#### Fix effects or first difference?
+
+```{r}
+map(differenced, pwfdtest, h0="fe")
+```
+
+
+### Breusch-Pagan Lagrange multiplier (LM)
+The Lagrange multiplier helps decide between random effects regression or a simple OLS regression. The null hypothesis is that variances across entities is zero, thus no significant difference across units (no panel effect). If p<0.05 a random model is preferred. 
+
+```{r}
+map(pooling, plmtest, type = "bp")
+```
+
+
+### Testing for cross-sectional dependnece
+The cross-sectional dependence test check if the residuals are correlated across entities.p-values are >> 0.05 for all models, suggesting that there is cross-sectional dependence. Cross-sectional dependence can lead to bias in tests results (also called contemporaneous correlation)
+
+```{r}
+map(fix_effects, pcdtest, test = c('lm'))
+map(fix_effects, pcdtest,test = c("cd"))
+```
+```{r}
+map(random_effects, pcdtest, test = c('lm'))
+map(random_effects, pcdtest,test = c("cd"))
+```
+```{r}
+map(differenced, pcdtest, test = c('lm'))
+map(differenced, pcdtest,test = c("cd"))
+```
+
+
+### Testing for serial correlation
+There is serial correlation (p < 0.05).  The null hypothesis is that residuals across entities are not correlated.
+
+```{r}
+map(fix_effects, pbgtest)
+```
+```{r}
+map(random_effects, pbgtest)
+```
+```{r}
+map(differenced, pbgtest)
+```
+
+
+### correcting for heteroskedasticity and autocorrelation
+
+The Arellano correction is recommended for fixed effects, another option is HAC. 
+```{r}
+vcov <- map(fix_effects, plm::vcovHC, method = "arellano", type = "HC4") # Arellano
+table1 <- map2(fix_effects, vcov, coeftest)
+
+vcov <- map(random_effects, plm::vcovHC, method = "arellano", type = "HC4") # Arellano
+table2 <- map2(random_effects, vcov, coeftest)
+
+vcov <- map(differenced, plm::vcovHC, method = "arellano", type = "HC4") # Arellano
+table3 <- map2(differenced, vcov, coeftest)
+```
+

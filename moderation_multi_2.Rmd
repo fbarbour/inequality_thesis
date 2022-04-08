@@ -1,0 +1,25 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+fp1 <- c("life_sat", "san_sat", "energy_sat", "nour_sat", "foodSec_sat", "income_sat", "water_sat")
+fp2 <- c(rep(" + log_carbon", 7), rep(" + log_MF", 7))
+frm <- c(" ~ gini_disp + gini_wealth")
+frms <- paste0(fp1, frm, fp2)
+
+multivar <- map(.x = frms, .f = function(x) {
+    lm(
+        formula = eval(x),
+        data = jefim_data
+)})
+
+vcov <- map(multivar, sandwich::vcovHC, method = "arellano", type = "HC2")
+var_infl <- map(multivar, vif)
+table1 <- map2(multivar, vcov, coeftest)
+```

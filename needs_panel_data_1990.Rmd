@@ -1,0 +1,141 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(plm)
+library(ggplot2)
+library(tidyverse)
+library(tsibble)
+```
+
+```{r}
+UN_pop <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/UN_population/UN_pop.csv") %>% 
+  pivot_longer(cols = c(2:62), names_to = "Year", names_transform = list(Year = as.integer), values_to = "pop") %>% 
+  dplyr::select(Country.Code, pop, Year)
+
+swiid_gini <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/swiid9_1/swiid_gini.csv")
+
+UN_lifeExp <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/UN_lifeExp/UN_lifeExp.csv") %>% 
+  pivot_longer(cols = c(2:61), names_to = "Year", names_transform = list(Year = as.integer), values_to = "lifeExp", values_drop_na = TRUE) %>% 
+  dplyr::select(Country.Code, lifeExp, Year)
+
+pwt_PPP <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/pwt.csv") %>% 
+  dplyr::select(Country.Code, Year, rgdpe) %>% 
+  filter(rgdpe > 0)
+
+urbanisation <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/urbanisation.csv", col_types = cols(Year = col_integer(), urbanisation = col_number()))
+
+popDensity <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/popDensity.csv", 
+    col_types = cols(Year = col_integer(), 
+        pop_density = col_number()))
+
+Fanning2021_social <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Fanning2021_social.csv")
+
+UNEP_MF <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/IRP Material Flows Database Bundle Post October 2020/UNEP_MF.csv") %>% filter(FlowAndUnits == "MF_cap") %>% 
+  pivot_longer(cols = c(5:52), names_to = "Year", names_transform = list(Year = as.integer), values_to = "MF_cap", values_drop_na = TRUE) %>% 
+  dplyr::select(Country.Code, Year, MF_cap)
+
+eora_carbon <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/eora_carbon.csv") %>% 
+  filter(Record == "CBA_tCO2eqperCap") %>% 
+  pivot_longer(cols = c(3:31), names_to = "Year", names_transform = list(Year = as.integer), values_to = "carbon_perCap", values_drop_na = TRUE) %>% 
+  select(Country.Code, carbon_perCap, Year)
+
+WID_wealth <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WID_wealth.csv", col_types = cols(Year = col_integer(), gini_wealth = col_number()))
+```
+
+```{r}
+panel_data <- Fanning2021_social %>% left_join(swiid_gini) %>% left_join(WID_wealth) %>% left_join(UNEP_MF) %>% left_join(eora_carbon) %>% left_join(UN_lifeExp) %>% left_join(UN_pop) %>% left_join(pwt_PPP) %>% left_join(urbanisation) %>% left_join(popDensity) %>% 
+  select(Country.Code, Year, MF_cap, carbon_perCap, gini_disp, gini_wealth, lifeExp, Sanitation, AccessToEnergy, pop_density, urbanisation, rgdpe, pop) %>% 
+  filter(Year >= 1990 & Year <= 2014) %>% 
+  distinct()
+```
+
+Compute missing values:
+```{r}
+missingness_MF <- panel_data %>% 
+    mutate(ismissing = is.na(MF_cap)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness == 0) %>% 
+  select(Country.Code)
+
+missingness_carbon <- panel_data %>% 
+    mutate(ismissing = (is.na(carbon_perCap) | carbon_perCap == 0)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness == 0) %>% 
+  select(Country.Code)
+
+missingness_disp <- panel_data %>% 
+    mutate(ismissing = is.na(gini_disp)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness <= 0.3) %>% 
+  select(Country.Code)
+
+missingness_wealth <- panel_data %>% 
+    mutate(ismissing = is.na(gini_wealth)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness <= 0.3) %>% 
+  select(Country.Code)
+
+missingness_life <- panel_data %>% 
+    mutate(ismissing = is.na(lifeExp)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness <= 0.3) %>% 
+  select(Country.Code)
+
+missingness_san <- panel_data %>% 
+    mutate(ismissing = is.na(Sanitation)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness <= 0.3) %>% 
+  select(Country.Code)
+
+missingness_energy <- panel_data %>% 
+    mutate(ismissing = is.na(AccessToEnergy)) %>% 
+    group_by(Country.Code) %>% 
+    summarize(missingness = sum(ismissing)/n()) %>% 
+    arrange(missingness) %>% 
+  filter(missingness <= 0.3) %>% 
+  select(Country.Code)
+
+key_countries <- missingness_MF %>% merge(missingness_carbon) %>% merge(missingness_disp) %>% merge(missingness_wealth) %>% merge(missingness_life) %>% merge(missingness_san) %>% merge(missingness_energy) %>% pull(Country.Code)
+```
+
+```{r}
+#library(tsibbledata)
+panel_data <- panel_data %>% 
+    filter(Country.Code %in% key_countries) %>% 
+    as_tsibble(key = Country.Code, index = Year) %>% 
+  fill_gaps(.full = TRUE)
+```
+
+```{r}
+panel_data <- panel_data %>% mutate(life_sat = log(94.0-lifeExp), san_sat = log(1.16-Sanitation), energy_sat = log(1.16-AccessToEnergy)) %>% 
+  mutate(log_MF = log(MF_cap), log_carbon = log(carbon_perCap), log_popDensity = log(pop_density), log_PPP = log(rgdpe/pop))
+```
+
+```{r}
+panel_data_plm <- pdata.frame(panel_data, index=c("Country.Code","Year"), drop.index=TRUE, row.names=TRUE)
+
+panel_data_plm_st <- panel_data_plm %>% mutate_at(c("life_sat", "gini_disp", "gini_wealth", "log_popDensity", "urbanisation", "log_MF", "log_carbon", "san_sat", "energy_sat", "log_PPP"), ~(scale(.) %>% as.vector)) %>% 
+  select(life_sat, gini_disp, gini_wealth, log_popDensity, urbanisation, log_MF, log_carbon, san_sat, energy_sat, log_PPP)
+```

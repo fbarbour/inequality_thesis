@@ -1,0 +1,116 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(readr)
+library(ggplot2)
+library(car)
+library(tidyr)
+library(dplyr)
+library(gridExtra)
+library(sandwich)
+```
+
+```{r}
+Fanning2021_social <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Fanning2021_social.csv") %>% 
+  filter(Year == 2014) %>% 
+  select(Country.Code, LifeExpectancy, Sanitation, AccessToEnergy)
+
+Fanning2021_ecological <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Fanning2021_ecological.csv") %>% 
+  filter(Year == 2014) %>% 
+  select(Country.Code, MaterialFootprint)
+
+eora_carbon <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/eora_carbon.csv") %>% 
+  filter(Record == "CBA_tCO2eqperCap") %>% 
+  pivot_longer(cols = c(3:31), names_to = "Year", names_transform = list(Year = as.integer), values_to = "carbon_perCap", values_drop_na = TRUE) %>% 
+  filter(Year == 2014) %>% 
+  mutate(carbon_perCap_scaled = carbon_perCap/1.61) %>% 
+  select(Country.Code, carbon_perCap_scaled)
+
+UN_pop <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/UN_population/UN_pop.csv") %>% 
+  pivot_longer(cols = c(2:62), names_to = "Year", names_transform = list(Year = as.integer), values_to = "pop") %>% 
+  filter(Year == 2014) %>% 
+  dplyr::select(Country.Code, pop)
+
+swiid_gini <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/swiid9_1/swiid_gini.csv") %>% 
+  filter(Year == 2014 & gini_disp > 0) %>% 
+  select(Country.Code, gini_disp)
+
+WID_wealth <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WID_wealth.csv", col_types = cols(Year = col_integer(), gini_wealth = col_number())) %>% 
+  filter(gini_wealth > 0 & Year == 2014) %>% 
+  select(Country.Code, gini_wealth)
+
+foodSecurity <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WB_foodInsecurity/foodSecurity.csv", col_types = cols(Year = col_integer())) %>% 
+  filter(Year == 2015 & !is.na(foodSecurity)) %>% 
+  mutate(foodSecurity_scaled = foodSecurity/95) %>% 
+  select(Country.Code, foodSecurity_scaled)
+
+WB_furtherNeeds <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WB_furtherNeeds.csv", 
+    col_types = cols(Year = col_integer(), incomePoverty = col_number(), undernourishment = col_number(), water = col_number())) %>% 
+  filter(Year == 2014) %>% 
+  mutate(income_scaled = (100-incomePoverty)/95, nourishment_scaled = (100-undernourishment)/95, water_scaled = water/95) %>% 
+  select(Country.Code, income_scaled, nourishment_scaled, water_scaled)
+
+pwt_PPP <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/pwt.csv") %>% 
+  filter(Year == 2014 & rgdpe > 0) %>% 
+  select(Country.Code, rgdpe)
+```
+
+```{r}
+life_sat_value <- 1.32
+san_sat_value <- 1.155
+energy_sat_value <- 1.155
+income_sat_value <- 1.155
+water_sat_value <- 1.155
+nour_sat_value <- 1.133
+foodSec_sat_value <- 1.128
+
+needs_sat_value <- c(life_sat_value, nour_sat_value, water_sat_value, san_sat_value, foodSec_sat_value, energy_sat_value)
+```
+
+```{r}
+jefim_data <- Fanning2021_ecological %>% left_join(Fanning2021_social) %>% left_join(swiid_gini) %>% left_join(WID_wealth) %>% left_join(WB_furtherNeeds) %>% left_join(foodSecurity) %>% left_join(eora_carbon) %>% left_join(UN_pop) %>% left_join(pwt_PPP) %>% 
+  mutate(life_sat = log(life_sat_value-LifeExpectancy), san_sat = log(san_sat_value-Sanitation), energy_sat = log(energy_sat_value-AccessToEnergy), foodSec_sat = log(foodSec_sat_value-foodSecurity_scaled), income_sat = log(income_sat_value-income_scaled), nour_sat = log(nour_sat_value-nourishment_scaled), water_sat = log(water_sat_value-water_scaled)) %>% 
+  filter(carbon_perCap_scaled > 0 & MaterialFootprint > 0 & gini_disp > 0 & gini_wealth > 0) %>% 
+  mutate(log_MF = log(MaterialFootprint), log_carbon = log(carbon_perCap_scaled), log_PPP = log(rgdpe/pop))
+
+life_sat_mean = mean(jefim_data$life_sat, na.rm = TRUE)
+san_sat_mean = mean(jefim_data$san_sat, na.rm = TRUE)
+energy_sat_mean = mean(jefim_data$energy_sat, na.rm = TRUE)
+foodSec_sat_mean = mean(jefim_data$foodSec_sat, na.rm = TRUE)
+income_sat_mean = mean(jefim_data$income_sat, na.rm = TRUE)
+water_sat_mean = mean(jefim_data$water_sat, na.rm = TRUE)
+nour_sat_mean = mean(jefim_data$nour_sat, na.rm = TRUE)
+MF_log_mean = mean(jefim_data$log_MF, na.rm = TRUE)
+carbon_log_mean = mean(jefim_data$log_carbon, na.rm = TRUE)
+PPP_log_mean = mean(jefim_data$log_PPP, na.rm = TRUE)
+
+needs_sat_mean <- c(life_sat_mean, nour_sat_mean, water_sat_mean, san_sat_mean, foodSec_sat_mean, energy_sat_mean)
+foot_sat_mean <- c(carbon_log_mean, MF_log_mean)
+
+life_sat_sd = sd(jefim_data$life_sat, na.rm = TRUE)
+san_sat_sd = sd(jefim_data$san_sat, na.rm = TRUE)
+energy_sat_sd = sd(jefim_data$energy_sat, na.rm = TRUE)
+foodSec_sat_sd = sd(jefim_data$foodSec_sat, na.rm = TRUE)
+income_sat_sd = sd(jefim_data$income_sat, na.rm = TRUE)
+water_sat_sd = sd(jefim_data$water_sat, na.rm = TRUE)
+nour_sat_sd = sd(jefim_data$nour_sat, na.rm = TRUE)
+MF_log_sd = sd(jefim_data$log_MF, na.rm = TRUE)
+carbon_log_sd = sd(jefim_data$log_carbon, na.rm = TRUE)
+PPP_log_sd = sd(jefim_data$log_PPP, na.rm = TRUE)
+
+needs_sat_sd <- c(life_sat_sd, nour_sat_sd, water_sat_sd, san_sat_sd, foodSec_sat_sd, energy_sat_sd)
+foot_sat_sd <- c(carbon_log_sd, MF_log_sd)
+
+jefim_data_unst <- jefim_data
+
+jefim_data <- jefim_data %>% mutate_at(c("life_sat", "nour_sat", "water_sat", "san_sat", "foodSec_sat", "energy_sat", "gini_disp", "gini_wealth", "log_MF", "log_carbon", "log_PPP"), ~(scale(.) %>% as.vector)) %>% 
+  select(Country.Code, log_carbon, log_MF, life_sat, nour_sat, water_sat, san_sat, foodSec_sat, energy_sat, gini_disp, gini_wealth, log_PPP, carbon_perCap_scaled, MaterialFootprint, LifeExpectancy, Sanitation, AccessToEnergy, foodSecurity_scaled, nourishment_scaled, water_scaled)
+```
+

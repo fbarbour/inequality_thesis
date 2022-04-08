@@ -1,0 +1,43 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(car)
+library(plm)
+library(lmtest)
+```
+
+```{r}
+Bruckner_deciles <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Bruckner_deciles.csv")
+swiid_gini <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/swiid9_1/swiid_gini.csv") %>% 
+  filter(gini_disp > 0 & Year == 2014)
+dorninger <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Dorninger_data.csv") %>%
+  dplyr::select(Country.Code, tech_index)
+ECI <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/eci_hs6_hs96.csv") %>% 
+  filter(!is.na(Country.Code)) %>% 
+  pivot_longer(cols = c(4:25), names_to = "Year", values_to = "ECI", names_transform = list(Year = as.integer)) %>% 
+  filter(Year == 2014) %>% 
+  select(Country.Code, Year, ECI)
+WID_wealth <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WID_wealth.csv", col_types = cols(Year = col_integer(), gini_wealth = col_number())) %>% 
+  filter(Year == 2014)
+urbanisation <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/urbanisation.csv", col_types = cols(Year = col_integer(), urbanisation = col_number())) %>% 
+  filter(Year == 2014)
+popDensity <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/popDensity.csv", col_types = cols(Year = col_integer(), popDensity = col_number())) %>% 
+  filter(Year == 2014)
+active_pop <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/active_pop.csv", col_types = cols(Year = col_integer(), active_pop = col_number())) %>% 
+  filter(Year == 2014)
+
+carbon_deciles <- Bruckner_deciles %>% merge(swiid_gini) %>% merge(dorninger) %>% merge(ECI) %>% merge(WID_wealth) %>% merge(urbanisation) %>% merge(popDensity) %>% merge(active_pop) %>% 
+  mutate(log_CF = log(CF_decile), log_expend = log(expend_decile), log_popDensity = log(pop_density))
+
+carbon_deciles_st <- carbon_deciles %>% mutate_at(c("log_CF", "log_expend", "gini_disp", "log_popDensity", "urbanisation", "tech_index", "ECI", "gini_wealth", "active_pop"), ~(scale(.) %>% as.vector))
+```
