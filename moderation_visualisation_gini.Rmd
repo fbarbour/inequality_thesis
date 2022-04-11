@@ -1,0 +1,153 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+needs <- c("life_sat", "nour_sat", "water_sat", "san_sat", "foodSec_sat", "energy_sat")
+frm <- c(rep(" ~ log_carbon + gini_disp + log_carbon:gini_disp", 6), 
+         rep(" ~ log_MF + gini_disp +log_MF:gini_disp", 6))
+frms <- paste0(needs, frm)
+
+
+linmod <- map(.x = frms, .f = function(x) {
+    lm(
+        formula = eval(x),
+        data = jefim_data
+)})
+```
+
+```{r}
+vcov <- map(linmod, vcovHC, type = "HC2")
+```
+
+```{r}
+map2(linmod, vcov, coeftest)
+```
+
+```{r}
+histogram <- data.frame(matrix(ncol = 8, nrow = 0))
+
+colnames(histogram) <- c("footprint", "need", "foot_value", "need_value", "y_maxInq", "y_minInq", "significance", "d_NS")
+
+foot_log <- c("log_carbon", "log_MF")
+foot_raw <- c("carbon_perCap_scaled", "MaterialFootprint")
+foot_labs <- c("Carbon footprint", "Material footprint")
+needs_raw <- c("LifeExpectancy", "nourishment_scaled", "water_scaled", "Sanitation", "foodSecurity_scaled", "AccessToEnergy")
+need_labs <- c("Life expectancy", "Nourishment", "Clean water", "Sanitation", "Food security", "Electricity")
+
+for (i in 1:2) {
+  for (j in 1:6) {
+    x.y <- data.frame(matrix(ncol = 5, nrow = 0))
+    
+    x.y <- jefim_data %>% select(foot_log[i], needs[j], gini_disp, foot_raw[i], needs_raw[j]) %>% mutate(footprint = foot_raw[i], need = needs_raw[j])
+    
+    colnames(x.y) <- c("log_footprint_col", "needs_col", "gini_disp", "raw_footprint_col", "raw_needs_col", "footprint", "need")
+    
+    x.y <- x.y %>% filter(raw_needs_col > 0)
+    
+    coeff_1 <- (map(linmod[j + 6*(i-1)], coefficients) %>% as.data.frame())[1,1]
+    coeff_2 <- (map(linmod[j + 6*(i-1)], coefficients) %>% as.data.frame())[2,1]
+    coeff_3 <- (map(linmod[j + 6*(i-1)], coefficients) %>% as.data.frame())[3,1]
+    coeff_4 <- (map(linmod[j + 6*(i-1)], coefficients) %>% as.data.frame())[4,1]
+    
+    var_1 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[1,1]
+    var_2 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[2,2]
+    var_3 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[3,3]
+    var_4 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[4,4]
+    cov_2_4 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[2,4]
+    cov_3_4 <- (vcov[j + 6*(i-1)] %>% as.data.frame())[3,4]
+    
+    x.y <- x.y %>% mutate(marginal.x = coeff_2 + coeff_4*gini_disp) %>% 
+      mutate(marginal.inq = (coeff_3 + coeff_4*log_footprint_col)) %>% 
+      mutate(sigma_marg.x = sqrt(var_2 + var_4*gini_disp^2 + 2*cov_2_4*gini_disp)) %>% 
+      mutate(sigma_marg.inq = sqrt(var_3 + var_4*log_footprint_col^2 + 2*cov_3_4*log_footprint_col)) %>% 
+      mutate(marg.x_conf95 = ifelse(marginal.x - 1.96*sigma_marg.x > 0 | marginal.x + 1.96*sigma_marg.x < 0, "sig", "insig")) %>% 
+  mutate(marg.inq_conf95 = ifelse(marginal.inq - 1.96*sigma_marg.inq > 0 | marginal.inq + 1.96*sigma_marg.inq < 0, "sig", "insig"))
+    
+  max_gini <- x.y %>% 
+    filter(marg.inq_conf95 == "sig") %>% 
+    pull(gini_disp) %>% 
+    as.numeric() %>% 
+    max(na.rm = TRUE)
+  
+  min_gini <- x.y %>% 
+    filter(marg.inq_conf95 == "sig") %>% 
+    pull(gini_disp) %>% 
+    as.numeric() %>% 
+    min(na.rm = TRUE)
+  
+  max_y <- x.y %>% 
+    pull(raw_needs_col) %>% 
+    as.numeric() %>% 
+    max(na.rm = TRUE)
+  
+  min_y <- x.y %>% 
+    pull(raw_needs_col) %>% 
+    as.numeric() %>% 
+    min(na.rm = TRUE)
+  
+  max_x <- x.y %>% 
+    filter(marg.inq_conf95 == "sig") %>% 
+    pull(raw_footprint_col) %>% 
+    as.numeric() %>% 
+    max(na.rm = TRUE)
+  
+  min_x <- x.y %>% 
+    filter(marg.inq_conf95 == "sig") %>% 
+    pull(raw_footprint_col) %>% 
+    as.numeric() %>% 
+    min(na.rm = TRUE)
+  
+  significance <- data.frame(xmin=c(-Inf, max_x),
+                           xmax=c(min_x, Inf),
+                           ymin=c(-Inf,-Inf),
+                           ymax=c(Inf,Inf),
+                           region=c("lower","upper"))
+  
+  x.y <- x.y %>% mutate(y_maxInq = coeff_1 + coeff_2*log_footprint_col + coeff_3*max_gini + coeff_4*log_footprint_col*max_gini) %>% 
+    mutate(y_minInq = coeff_1 + coeff_2*log_footprint_col + coeff_3*min_gini + coeff_4*log_footprint_col*min_gini) %>% 
+    mutate(y_maxInq_rev = (y_maxInq*needs_sat_sd[j] + needs_sat_mean[j]), y_minInq_rev = (y_minInq*needs_sat_sd[j] + needs_sat_mean[j])) %>% 
+    mutate(y_maxInq_unsat = needs_sat_value[j]-exp(y_maxInq_rev), y_minInq_unsat = needs_sat_value[j]-exp(y_minInq_rev)) %>% 
+    mutate(d_NS = (y_maxInq_unsat-y_minInq_unsat)/(max_y-min_y)) %>% 
+    select(footprint, need, raw_footprint_col, raw_needs_col, y_maxInq_unsat, y_minInq_unsat, marg.inq_conf95, d_NS)
+  
+  colnames(x.y) <- c("footprint", "need", "foot_value", "need_value", "y_maxInq", "y_minInq", "significance", "d_NS")
+  
+  histogram <- rbind(histogram, x.y)
+  
+  plot <- x.y %>% select(foot_value, need_value, y_maxInq, y_minInq) %>% as.matrix() %>% as.data.frame() %>% 
+    ggplot(aes(foot_value)) + 
+    geom_rect(data=significance,aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax,fill=region), alpha=0.2,inherit.aes=FALSE) +
+    scale_fill_manual(values=c("grey1","grey1")) + 
+    geom_point(aes(y=need_value, colour = "observed")) + 
+    geom_smooth(formula = y~log(x), aes(y=y_maxInq, colour = "max gini"), se = FALSE) +
+    geom_smooth(formula = y~log(x), aes(y=y_minInq, colour = "min gini"), se = FALSE) +
+    scale_shape_manual(values = c(21, 16)) + 
+    geom_hline(yintercept=1, linetype="dashed") + 
+    geom_vline(xintercept=1, linetype="dashed") +
+    theme(legend.position="none") +
+    xlab(foot_labs[i]) + 
+    ylab(need_labs[j]) + 
+    ylim(0,1.2)
+  
+  print(plot)
+  }
+}
+
+```
+
+```{r}
+histogram %>% filter(significance == "sig" & d_NS >= -1 & d_NS <= 1) %>% select(d_NS) %>% as.matrix() %>% as.data.frame() %>% ggplot(aes(d_NS)) + geom_histogram(binwidth = 0.1, color="black", fill = "red", boundary = 0, boundary = 0) + geom_vline(xintercept=0, linetype="dashed") + geom_vline(xintercept=0, linetype="dashed") + xlim(-1,1) + ggtitle("Income inequality") + theme(legend.position="none") + ylab("Frequency") + xlab("NS improvement")
+
+hist_carbon <- histogram %>% filter(significance == "sig" & d_NS >= -1 & d_NS <= 1 & footprint == "carbon_perCap_scaled") %>% select(d_NS) %>% as.matrix() %>% as.data.frame() %>% ggplot(aes(d_NS)) + geom_histogram(binwidth = 0.1, color="black", fill = "red", boundary = 0, boundary = 0) + geom_vline(xintercept=0, linetype="dashed") + geom_vline(xintercept=0, linetype="dashed") + xlim(-1,1) + ggtitle("Carbon footprint") + theme(legend.position="none") + ylab("Frequency") + xlab("NS improvement")
+
+hist_MF <- histogram %>% filter(significance == "sig" & d_NS >= -1 & d_NS <= 1 & footprint == "MaterialFootprint") %>% select(d_NS) %>% as.matrix() %>% as.data.frame() %>% ggplot(aes(d_NS)) + geom_histogram(binwidth = 0.1, color="black", fill = "red", boundary = 0, boundary = 0) + geom_vline(xintercept=0, linetype="dashed") + geom_vline(xintercept=0, linetype="dashed") + xlim(-1,1) + ggtitle("Material footprint") + theme(legend.position="none") + ylab("Frequency") + xlab("NS improvement")
+
+hist_list_agg <- list(hist_carbon, hist_MF) 
+do.call("grid.arrange", c(hist_list_agg, ncol = 2, nrow = 2))
+```

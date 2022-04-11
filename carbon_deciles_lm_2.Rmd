@@ -1,0 +1,63 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+fp <- c("log_CF ~ gini_disp + gini_wealth + govEffectiveness + log_expend")
+cntrl <- c("", 
+           " + log_popDensity + urbanisation", 
+           " + tech_index + active_pop", 
+           " + log_popDensity + urbanisation + tech_index + active_pop")
+frms <- paste0(fp, cntrl)
+
+
+random_effects <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        index = c("Country.Code", "decile"), data = carbon_deciles_st, 
+        effect = "individual", model = "random"
+)})
+
+
+pooling <- map(.x = frms, .f = function(x) {
+    plm(
+        formula = eval(x),
+        index = c("Country.Code", "decile"), data = carbon_deciles_st, 
+        effect = "individual", model = "pooling"
+)})
+```
+
+
+### Breusch-Pagan Lagrange multiplier (LM)
+The Lagrange multiplier helps decide between random effects regression or a simple OLS regression. The null hypothesis is that variances across entities is zero, thus no significant difference across units (no panel effect). If p<0.05 a random model is preferred. 
+
+```{r}
+map(pooling, plmtest, type = "bp")
+```
+
+
+### Testing for cross-sectional dependnece
+The cross-sectional dependence test check if the residuals are correlated across entities.p-values are >> 0.05 for all models, suggesting that there is cross-sectional dependence. Cross-sectional dependence can lead to bias in tests results (also called contemporaneous correlation)
+
+```{r}
+map(random_effects, pcdtest, test = c('lm'))
+map(random_effects, pcdtest,test = c("cd"))
+```
+```{r}
+map(pooling, pcdtest, test = c('lm'))
+map(pooling, pcdtest,test = c("cd"))
+```
+
+
+```{r}
+vcov <- map(random_effects, plm::vcovHC, method = "arellano", type = "HC2", cluster = "group") # Arellano
+random_effects_HC <- map2(random_effects, vcov, coeftest)
+
+vcov <- map(pooling, plm::vcovHC, method = "arellano", type = "HC2", cluster = "group") # Arellano
+pooling_HC <- map2(pooling, vcov, coeftest)
+```

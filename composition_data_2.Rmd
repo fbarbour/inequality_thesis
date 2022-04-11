@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(readr)
+library(dplyr)
+library(plm)
+library(tidyverse)
+library(lmtest)
+```
+
+```{r}
+consumption_expend <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/Oswald 2021/oswald_expend_2011.csv") %>% 
+  filter(total > 0)
+
+swiid_gini <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/swiid9_1/swiid_gini.csv") %>% 
+  filter(gini_disp > 0) %>% 
+  filter(Year == 2011)
+
+WID_wealth <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WID_wealth.csv", col_types = cols(Year = col_integer(), gini_wealth = col_number())) %>% 
+  filter(Year == 2011)
+
+urbanisation <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/urbanisation.csv", col_types = cols(Year = col_integer(), urbanisation = col_number())) %>% 
+  filter(Year == 2011)
+
+popDensity <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/popDensity.csv", col_types = cols(Year = col_integer(), popDensity = col_number())) %>% 
+  filter(Year == 2011)
+
+active_pop <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/active_pop.csv", col_types = cols(Year = col_integer(), active_pop = col_number())) %>% 
+  filter(Year == 2011)
+
+WGI_govEffectiveness <- read_csv("~/Documents/Learning/Stockholm/THESIS/Datasets/WGI_govEffectiveness/WGI_govEffectiveness.csv", col_types = cols(`1997` = col_number(), `1999` = col_number(), `2001` = col_number())) %>% 
+  pivot_longer(cols = c(2:26), names_to = "Year", names_transform = list(Year = as.integer), values_to = "govEffectiveness") %>% 
+  filter(Year == 2011) %>% 
+  dplyr::select(Country.Code, govEffectiveness)
+```
+
+```{r}
+consumption_comp <- consumption_expend %>% left_join(swiid_gini) %>% left_join(WID_wealth) %>% left_join(urbanisation) %>% left_join(popDensity) %>% left_join(active_pop) %>% left_join(WGI_govEffectiveness) %>% 
+  mutate(transport_total = vehicle_purchase + vehicle_fuel + transp_other) %>% 
+  mutate(log_total = log(total), log_transport = log(transport_total), log_vhclPurch = log(vehicle_purchase), log_vhclFuel = log(vehicle_fuel), log_otherTransp = log(transp_other), log_popDensity = log(pop_density))
+
+consumption_comp_st <- consumption_comp %>% mutate_at(c("log_total", "gini_disp", "gini_wealth", "govEffectiveness", "log_popDensity", "urbanisation", "active_pop", "log_transport", "log_vhclPurch", "log_vhclFuel", "log_otherTransp"), ~(scale(.) %>% as.vector))
+```
